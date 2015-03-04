@@ -132,12 +132,12 @@ public function processApi()
 				// If success everythig is good send header as "OK" and user details
 				$this->response($this->json($result), 200);
 			}
-			$error = array('status' => "Failed", "msg" => "Usuario ? Clave invalidos, por favor intente de nuevo", "codigoRespuesta" => "0");	
+			$error = array('status' => "Failed", "msg" => "Usuario o Clave invalidos, por favor intente de nuevo", "codigoRespuesta" => "0");	
 			$this->response($this->json($error), 200); // If no records "No Content" status
 		}
 		
 		// If invalid inputs "Bad Request" status message and reason
-		$error = array('status' => "Failed", "msg" => "Usuario ? Clave invalidos", "codigoRespuesta" => "0");	
+		$error = array('status' => "Failed", "msg" => "Usuario o Clave invalidos", "codigoRespuesta" => "0");	
 		$this->response($this->json($error), 400);
 	}
 	
@@ -194,6 +194,9 @@ public function processApi()
 		$this->response('',204); // If no records "No Content" status
 	}
 	
+	/**
+	 * Servicio encargado de obtener la lista de noticias.
+	 */
 	private function obtenerNoticias(){ 
 		// Cross validation if the request method is GET else it will return "Not Acceptable" status
 		if($this->get_request_method() != "GET"){
@@ -214,6 +217,65 @@ public function processApi()
 			$this->response($this->json($result), 200);
 		}
 		$this->response('',204); // If no records "No Content" status
+	}
+
+	/**
+	 * Servicio encargado de insertar un nuevo puntaje.
+	 */
+	private function registrarPuntaje()
+	{
+		// Cross validation if the request method is POST else it will return "Not Acceptable" status
+		if($this->get_request_method() != "GET")
+		{
+			$this->response('',406);
+		}
+
+		$usuarioId 	= $this->_request['usuarioId'];
+		$juegoId	= $this->_request['juegoId'];
+		$puntaje 	= $this->_request['puntaje'];
+
+		// Se validan que los parametros llegaron
+		if(!empty($usuarioId) and !empty($juegoId) and !empty($puntaje))
+		{
+
+			// se valida si ya existe un puntaje para el usuario
+			$sql = mysql_query("SELECT P.FK_USUARIO FROM NG_PUNTAJES as P WHERE P.FK_USUARIO = '$usuarioId' and P.FK_JUEGO = '$juegoId';", $this->db);
+			if(mysql_num_rows($sql) > 0){
+
+				// Se realiza el insert
+				$sql = mysql_query("UPDATE NG_PUNTAJES SET PUNTAJE = '$puntaje' WHERE FK_USUARIO = '$usuarioId' and FK_JUEGO = '$juegoId';", $this->db);
+
+				if($sql){
+
+					$result['codigoRespuesta'] = 1;
+					$result['mensajeRespuesta'] = "Puntaje actualizado con exito";
+					// If success everythig is good send header as "OK" and user details
+					$this->response($this->json($result), 200);
+				}
+				$error = array('status' => "Failed", "mensajeRespuesta" => "Error al actualizar puntaje", "codigoRespuesta" => "0");	
+				$this->response($this->json($error), 200); // If no records "No Content" status
+
+
+			}else{
+				
+				// Se realiza el insert
+				$sql = mysql_query("INSERT INTO  NG_PUNTAJES (PUNTAJE_ID, FK_JUEGO ,FK_USUARIO ,PUNTAJE)VALUES (NULL ,  $juegoId,  $usuarioId, $puntaje)", $this->db);
+
+				if($sql){
+
+					$result['codigoRespuesta'] = 1;
+					$result['mensajeRespuesta'] = "Puntaje insertado con exito";
+					// If success everythig is good send header as "OK" and user details
+					$this->response($this->json($result), 200);
+				}
+				$error = array('status' => "Failed", "mensajeRespuesta" => "Error al insertar puntaje", "codigoRespuesta" => "0");	
+				$this->response($this->json($error), 200); // If no records "No Content" status
+			}		
+		}
+
+		// If invalid inputs "Bad Request" status message and reason
+		$error = array('status' => "Failed", "mensajeRespuesta" => "Parametros invalidos", "codigoRespuesta" => "0");	
+		$this->response($this->json($error), 400);
 	}
 	
 	//Encode array into JSON
